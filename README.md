@@ -327,7 +327,7 @@ The router writes ingestion metadata to `ingestion_audit_log` (dataset, checksum
 
 Scheduled workflow: `.github/workflows/scheduled-ingestion.yml`
 
-- Runs every 30 minutes (cron) and on manual trigger.
+- Runs every 24 hours (cron) and on manual trigger.
 - Uses `DATABASE_URL` from GitHub Actions secrets.
 - Applies schema, selects a CSV source, routes dataset type, and ingests.
 - Prevents duplicate successful loads by dataset + file checksum.
