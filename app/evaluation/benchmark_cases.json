@@ -1,0 +1,65 @@
+{
+  "sql_cases": [
+    {
+      "name": "failure_rate_by_type",
+      "question": "Show failure rate by machine type",
+      "must_include": [
+        "machine_type",
+        "machine_failure",
+        "GROUP BY"
+      ]
+    },
+    {
+      "name": "top_torque",
+      "question": "Show top torque observations",
+      "must_include": [
+        "torque_nm",
+        "ORDER BY",
+        "LIMIT"
+      ]
+    }
+  ],
+  "rag_cases": [
+    {
+      "name": "torque_inspection_guidance",
+      "question": "What should we inspect when torque is high?",
+      "top_k": 3,
+      "expected_terms": [
+        "torque",
+        "inspect"
+      ]
+    },
+    {
+      "name": "wear_triage_guidance",
+      "question": "How should we triage high wear cases?",
+      "top_k": 3,
+      "expected_terms": [
+        "wear",
+        "prioritize"
+      ]
+    }
+  ],
+  "investigate_cases": [
+    {
+      "name": "investigate_without_sql_exec",
+      "question": "Find high-risk operating conditions and what to inspect next",
+      "execute_sql": false,
+      "max_rows": 50,
+      "risk_threshold": 0.5,
+      "rag_top_k": 3,
+      "min_rag_chunks": 1,
+      "require_scoring_when_sql": false
+    },
+    {
+      "name": "investigate_with_sql_exec",
+      "question": "Show failure rate by machine type and what to inspect next",
+      "execute_sql": true,
+      "max_rows": 50,
+      "risk_threshold": 0.5,
+      "rag_top_k": 3,
+      "min_sql_rows": 1,
+      "min_rag_chunks": 1,
+      "require_scoring_when_sql": false
+    }
+  ]
+}

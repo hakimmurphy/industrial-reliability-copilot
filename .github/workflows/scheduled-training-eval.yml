@@ -1,0 +1,109 @@
+name: scheduled-training-eval
+
+on:
+  workflow_run:
+    workflows: ["scheduled-ingestion"]
+    types: [completed]
+  schedule:
+    - cron: "15 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      pr_auc_threshold:
+        description: "Minimum PR-AUC required for selected model"
+        required: true
+        default: "0.55"
+      overall_pass_rate_threshold:
+        description: "Minimum overall evaluation pass rate (0-1)"
+        required: true
+        default: "0.80"
+
+jobs:
+  train-and-evaluate:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      PR_AUC_THRESHOLD: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.pr_auc_threshold || '0.55' }}
+      OVERALL_PASS_RATE_THRESHOLD: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.overall_pass_rate_threshold || '0.80' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Validate required secrets
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "DATABASE_URL secret is required for training/evaluation workflow"
+            exit 1
+          fi
+
+      - name: Train baseline model
+        run: |
+          python pipelines/training/train_baseline.py \
+            --database-url "$DATABASE_URL" \
+            --metrics-out app/evaluation/baseline_metrics.json \
+            --model-out app/models/baseline_failure_model.joblib
+
+      - name: Run evaluation benchmark
+        run: |
+          python app/evaluation/run_evaluation.py \
+            --database-url "$DATABASE_URL" \
+            --output app/evaluation/step10_eval_report.json
+
+      - name: Enforce quality gates
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          pr_auc_threshold = float("${PR_AUC_THRESHOLD}")
+          overall_threshold = float("${OVERALL_PASS_RATE_THRESHOLD}")
+
+          metrics = json.loads(Path("app/evaluation/baseline_metrics.json").read_text(encoding="utf-8"))
+          report = json.loads(Path("app/evaluation/step10_eval_report.json").read_text(encoding="utf-8"))
+
+          pr_auc = float(metrics.get("selected_model_pr_auc", 0.0))
+          overall_pass_rate = float(report.get("summary", {}).get("overall", {}).get("pass_rate", 0.0))
+
+          print(f"selected_model_pr_auc={pr_auc:.4f} (threshold={pr_auc_threshold:.4f})")
+          print(f"overall_pass_rate={overall_pass_rate:.4f} (threshold={overall_threshold:.4f})")
+
+          failures = []
+          if pr_auc < pr_auc_threshold:
+            failures.append(
+              f"selected_model_pr_auc {pr_auc:.4f} is below threshold {pr_auc_threshold:.4f}"
+            )
+          if overall_pass_rate < overall_threshold:
+            failures.append(
+              f"overall_pass_rate {overall_pass_rate:.4f} is below threshold {overall_threshold:.4f}"
+            )
+
+          if failures:
+            print("Quality gate failed:")
+            for failure in failures:
+              print("- " + failure)
+            raise SystemExit(1)
+
+          print("Quality gate passed.")
+          PY
+
+      - name: Upload model and evaluation artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: training-eval-artifacts
+          retention-days: 14
+          path: |
+            app/models/baseline_failure_model.joblib
+            app/evaluation/baseline_metrics.json
+            app/evaluation/step10_eval_report.json

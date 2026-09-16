@@ -1,0 +1,39 @@
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+*.pyc
+
+# OS/editor files
+.DS_Store
+
+# Python caches and tooling
+*.pyo
+*.pyd
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Build and packaging outputs
+build/
+dist/
+*.egg-info/
+
+# Test/coverage outputs
+.coverage
+htmlcov/
+
+# Project-generated data artifacts
+data/processed/*.parquet
+
+# Generated model/evaluation artifacts
+app/models/*.joblib
+app/evaluation/baseline_metrics.json
+app/evaluation/step10_eval_report.json
+
+# Logs
+*.log
+data/MetroPT3(AirCompressor).csv

@@ -1,0 +1,14 @@
+.git
+.github
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.mypy_cache
+.DS_Store
+notebooks
+app/models/*.joblib
+app/evaluation/*.json
+data/processed
