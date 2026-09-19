@@ -50,7 +50,7 @@ jobs:
         run: python pipelines/ingestion/ingest_ai4i.py --verbose
 
       - name: Run tests
-        run: pytest -q
+        run: PYTHONPATH=. pytest -q
 
       - name: Train baseline model
         run: python pipelines/training/train_baseline.py --database-url "$DATABASE_URL"
