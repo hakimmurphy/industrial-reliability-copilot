@@ -65,10 +65,11 @@ jobs:
         run: |
           python - <<'PY'
           import json
+          import os
           from pathlib import Path
 
-          pr_auc_threshold = float("${PR_AUC_THRESHOLD}")
-          overall_threshold = float("${OVERALL_PASS_RATE_THRESHOLD}")
+          pr_auc_threshold = float(os.environ.get("PR_AUC_THRESHOLD", "0.55"))
+          overall_threshold = float(os.environ.get("OVERALL_PASS_RATE_THRESHOLD", "0.80"))
 
           metrics = json.loads(Path("app/evaluation/baseline_metrics.json").read_text(encoding="utf-8"))
           report = json.loads(Path("app/evaluation/step10_eval_report.json").read_text(encoding="utf-8"))
@@ -99,10 +100,12 @@ jobs:
           PY
 
       - name: Upload model and evaluation artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: training-eval-artifacts
           retention-days: 14
+          if-no-files-found: warn
           path: |
             app/models/baseline_failure_model.joblib
             app/evaluation/baseline_metrics.json
