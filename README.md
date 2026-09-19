@@ -46,7 +46,7 @@ industrial-reliability-copilot/
 - ✅ 9. Agent/tool calling
 - ✅ 10. Evaluation
 - ✅ 11. Docker/CI/CD
-- ⬜ 12. Neon
+- ✅ 12. Neon
 
 Step 4 artifacts:
 
