@@ -42,7 +42,9 @@ jobs:
           pip install -r requirements.txt
 
       - name: Apply schema
-        run: psql "$DATABASE_URL" -f sql/schema.sql
+        run: |
+          PSQL_URL="${DATABASE_URL/+psycopg2/}"
+          psql "$PSQL_URL" -f sql/schema.sql
 
       - name: Run ingestion
         run: python pipelines/ingestion/ingest_ai4i.py --verbose
